@@ -6,23 +6,31 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object Riksdagen extends App {
 
-  //val baseUri = "http://data.riksdagen.se/dokumentlista/?sok=&doktyp=mot&rm=&from=2013-01-01&tom=2013-12-31&sort=rel&sortorder=desc&utformat=json"
-  val baseUri = "http://data.riksdagen.se/dokumentlista/?sok=&doktyp=mot&sort=datum&sortorder=desc&utformat=json&a=s"
 
   def uri(page: Int) = s"$baseUri&p=$page"
 
   def loadArgs: Option[Int] = if (args.length > 0) Some(args(0).toInt) else None
-
-  val pagesToFetch = loadArgs.getOrElse({
-    println("No arguments supplied. Will only fetch 1 page.")
-    1
-  })
-
-  val vertices = new mutable.HashMap[String, String]
-  val edges = new mutable.HashMap[(String, String), Int]
+  val year = loadArgs.getOrElse(2014)
+  val baseUri = s"http://data.riksdagen.se/dokumentlista/?sok=&doktyp=mot&rm=&from=$year-01-01&tom=$year-12-31&sort=rel&sortorder=desc&utformat=json"
 
   val builder = new com.ning.http.client.AsyncHttpClientConfig.Builder()
   val client = new play.api.libs.ws.ning.NingWSClient(builder.build())
+
+  val pagesToFetch = {
+    println("No arguments supplied. Will look up how many pages to fetch")
+    val result: Int = Await.result(client.url(baseUri).get().map {
+      response =>
+        (response.json \ "dokumentlista" \ "@sidor").as[String].toInt
+    }, Duration("10 seconds"))
+    println(s"Will fetch $result pages")
+    result
+  }
+  val vertices = new mutable.HashMap[String, String]
+  val edges = new mutable.HashMap[(String, String), Int]
+
+
+  def partioverskridandeSamarbete(intressent1: JsValue, intressent2: JsValue): Boolean =
+    !((intressent1 \ "partibet").asOpt[String] equals (intressent2 \ "partibet").asOpt[String])
 
   val seq = for (page <- Range(1, pagesToFetch + 1)) yield {
     client.url(uri(page)).get().map {
@@ -39,13 +47,14 @@ object Riksdagen extends App {
               intressenter.foreach {
                 intressent =>
                   def intressentId(intressent: JsValue): String = (intressent \ "intressent_id").as[String]
-                  vertices.put(intressentId(intressent), (intressent \ "namn").as[String])
+                  def namn(value: JsValue): String = s"${(intressent \ "namn").as[String]} (${(intressent \ "partibet").asOpt[String].getOrElse("Obunden")})"
+                  vertices.put(intressentId(intressent), namn(intressent))
                   intressenter.foreach {
                     intressent2 =>
-                      if(!intressentId(intressent).equalsIgnoreCase(intressentId(intressent2))){
+                      if (!intressentId(intressent).equalsIgnoreCase(intressentId(intressent2)) && partioverskridandeSamarbete(intressent, intressent2)) {
                         val key: (String, String) = (intressentId(intressent), intressentId(intressent2))
                         val hitOption = edges.get(key)
-                        if(hitOption.isDefined) edges.update(key, hitOption.get + 1)
+                        if (hitOption.isDefined) edges.update(key, hitOption.get + 1)
                         else edges.put(key, 1)
                       }
                   }
@@ -59,11 +68,11 @@ object Riksdagen extends App {
   println(s"waiting for ${seq.size} request(s) to finish")
   seq.foreach(fut => Await.ready(fut, Duration("15 seconds")))
 
-  println("VERTICES!")
+  println(s"VERTICES: ${vertices.size}")
   println(vertices)
 
-  println("EDGES!")
-  println(edges.filter(edge => edge._2 > 1))
+  println(s"EDGES: ${edges.size}")
+  println(edges)
 
   client.close()
 }

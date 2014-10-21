@@ -41,17 +41,18 @@ object Riksdagen extends App {
                   vertices.put(intressentId(intressent), (intressent \ "namn").as[String])
                   intressenter.foreach {
                     intressent2 =>
-                      val key: (String, String) = (intressentId(intressent), intressentId(intressent2))
-                      val hitOption = edges.get(key)
-                      if(hitOption.isDefined) edges.update(key, hitOption.get + 1)
-                      else edges.put(key, 1)
+                      if(!intressentId(intressent).equalsIgnoreCase(intressentId(intressent2))){
+                        val key: (String, String) = (intressentId(intressent), intressentId(intressent2))
+                        val hitOption = edges.get(key)
+                        if(hitOption.isDefined) edges.update(key, hitOption.get + 1)
+                        else edges.put(key, 1)
+                      }
                   }
 
               }
             }
             s"klar med $page"
         }.toList
-        list.foreach(println(_))
     }
   }
   println(s"waiting for ${seq.size} request(s) to finish")
@@ -61,7 +62,7 @@ object Riksdagen extends App {
   println(vertices)
 
   println("EDGES!")
-  println(edges.filter(x => x._2 > 1))
+  println(edges.filter(edge => edge._2 > 1))
 
   client.close()
 }

@@ -6,6 +6,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object Riksdagen extends App {
 
+  //val baseUri = "http://data.riksdagen.se/dokumentlista/?sok=&doktyp=mot&rm=&from=2013-01-01&tom=2013-12-31&sort=rel&sortorder=desc&utformat=json"
   val baseUri = "http://data.riksdagen.se/dokumentlista/?sok=&doktyp=mot&sort=datum&sortorder=desc&utformat=json&a=s"
 
   def uri(page: Int) = s"$baseUri&p=$page"

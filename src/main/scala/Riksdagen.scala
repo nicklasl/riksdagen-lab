@@ -70,7 +70,7 @@ object Riksdagen extends App {
   println(vertices)
 
   println(s"EDGES: ${edges.size}")
-  println(edges)
+  edges.foreach(println(_))
 
   client.close()
 }

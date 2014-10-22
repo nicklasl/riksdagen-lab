@@ -34,4 +34,6 @@ case class IntressentPair(intressent1: Intressent, intressent2: Intressent){
     }
     case _ => false
   }
+
+  override def toString: String = s"i1=${intressent1.intressent_id}\ti2=${intressent2.intressent_id}"
 }

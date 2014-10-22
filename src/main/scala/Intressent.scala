@@ -6,7 +6,15 @@ import play.api.libs.json.{Json, Reads}
  * Date: 2014-10-22
  * Time: 20:27
  */
-case class Intressent(intressent_id: String, namn: String, partibet: Option[String])
+case class Intressent(intressent_id: String, namn: String, partibet: Option[String]){
+  override def hashCode(): Int = this.intressent_id.hashCode
+
+  override def equals(obj: scala.Any): Boolean = obj match {
+    case intressent:Intressent => intressent.intressent_id.equalsIgnoreCase(this.intressent_id)
+    case _ => false
+  }
+
+}
 
 object Intressent {
   implicit val reads = Json.reads[Intressent]

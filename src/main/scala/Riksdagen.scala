@@ -1,3 +1,4 @@
+import akka.actor.Props
 import play.api.libs.json.{JsArray, JsValue}
 import scala.collection.mutable
 import scala.concurrent.Await
@@ -5,6 +6,8 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Riksdagen extends App {
+  val actorSystem = akka.actor.ActorSystem("ActorSystem")
+  val fileWriterActor = actorSystem.actorOf(Props[FileWritingActor], name = "FileWritingActor")
 
 
   def uri(page: Int) = s"$baseUri&p=$page"
@@ -65,6 +68,11 @@ object Riksdagen extends App {
   }
   println(s"waiting for ${seq.size} request(s) to finish")
   seq.foreach(fut => Await.ready(fut, Duration("15 seconds")))
+
+
+  val result = Result(year.toString, vertices.toSet, edges.toMap)
+
+  fileWriterActor ! result
 
   println(s"VERTICES: ${vertices.size}")
   println(vertices)

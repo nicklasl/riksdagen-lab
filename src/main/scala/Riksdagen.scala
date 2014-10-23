@@ -1,4 +1,7 @@
 import akka.actor.Props
+import akka.pattern.ask
+import akka.util.Timeout
+import java.util.concurrent.TimeUnit
 import play.api.libs.json.{JsArray, JsValue}
 import scala.collection.mutable
 import scala.concurrent.Await
@@ -73,8 +76,13 @@ object Riksdagen extends App {
 
 
   val result = Result(year.toString, vertices.toSet, edges.toMap)
+  implicit val timeout = Timeout(5, TimeUnit.SECONDS)
+  fileWriterActor ? result map {
+    case "done" => {
+      println(s"Done writing file for year=$year")
+      actorSystem.shutdown()
+      client.close()
+    }
+  }
 
-  fileWriterActor ! result
-
-  client.close()
 }

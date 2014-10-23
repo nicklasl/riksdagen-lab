@@ -1,3 +1,9 @@
+import AssemblyKeys._
+
+assemblySettings
+
+jarName in assembly := "Riksdagen.jar"
+
 name := """riksdagen"""
 
 version := "0.1-SNAPSHOT"

@@ -15,6 +15,9 @@ object Riksdagen extends App {
   def loadArgs: Option[Int] = if (args.length > 0) Some(args(0).toInt) else None
 
   val year = loadArgs.getOrElse(2014)
+
+  val mappaSamarbeteInomPartier = false
+
   val baseUri = s"http://data.riksdagen.se/dokumentlista/?sok=&doktyp=mot&rm=&from=$year-01-01&tom=$year-12-31&sort=rel&sortorder=desc&utformat=json"
 
   val builder = new com.ning.http.client.AsyncHttpClientConfig.Builder()
@@ -38,7 +41,7 @@ object Riksdagen extends App {
     client.url(uri(page)).get().map {
       response =>
         val docs: Seq[JsValue] = ((response.json \ "dokumentlista") \ "dokument").as[JsArray].value
-        val list: List[String] = docs.map {
+        docs.map {
           json =>
             val intressenter = {
               val value: JsValue = json \ "dokintressent" \ "intressent"
@@ -51,7 +54,7 @@ object Riksdagen extends App {
                   vertices.add(intressent)
                   intressenter.foreach {
                     intressent2 =>
-                      if (!intressent.equals(intressent2) && partioverskridandeSamarbete(intressent, intressent2)) {
+                      if (!intressent.equals(intressent2) && (mappaSamarbeteInomPartier || partioverskridandeSamarbete(intressent, intressent2))) {
                         val key: IntressentPair = IntressentPair(intressent, intressent2)
                         val hitOption = edges.get(key)
                         if (hitOption.isDefined) edges.update(key, hitOption.get + 1)
@@ -62,7 +65,7 @@ object Riksdagen extends App {
               }
             }
             s"klar med $page"
-        }.toList
+        }
     }
   }
   println(s"waiting for ${seq.size} request(s) to finish")
@@ -72,14 +75,6 @@ object Riksdagen extends App {
   val result = Result(year.toString, vertices.toSet, edges.toMap)
 
   fileWriterActor ! result
-
-/*
-  println(s"VERTICES: ${vertices.size}")
-  println(vertices)
-
-  println(s"EDGES: ${edges.size}")
-  edges.foreach(println(_))
-*/
 
   client.close()
 }

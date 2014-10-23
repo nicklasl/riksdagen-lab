@@ -21,7 +21,6 @@ object Riksdagen extends App {
   val client = new play.api.libs.ws.ning.NingWSClient(builder.build())
 
   val pagesToFetch = {
-    println("No arguments supplied. Will look up how many pages to fetch")
     val result: Int = Await.result(client.url(baseUri).get().map {
       response =>
         (response.json \ "dokumentlista" \ "@sidor").as[String].toInt
@@ -74,11 +73,13 @@ object Riksdagen extends App {
 
   fileWriterActor ! result
 
+/*
   println(s"VERTICES: ${vertices.size}")
   println(vertices)
 
   println(s"EDGES: ${edges.size}")
   edges.foreach(println(_))
+*/
 
   client.close()
 }

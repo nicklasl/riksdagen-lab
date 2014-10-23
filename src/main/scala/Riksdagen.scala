@@ -1,3 +1,4 @@
+import akka.actor.Props
 import play.api.libs.json.{JsArray, JsValue}
 import scala.collection.mutable
 import scala.concurrent.Await
@@ -5,6 +6,8 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Riksdagen extends App {
+  val actorSystem = akka.actor.ActorSystem("ActorSystem")
+  val fileWriterActor = actorSystem.actorOf(Props[FileWritingActor], name = "FileWritingActor")
 
 
   def uri(page: Int) = s"$baseUri&p=$page"
@@ -18,7 +21,6 @@ object Riksdagen extends App {
   val client = new play.api.libs.ws.ning.NingWSClient(builder.build())
 
   val pagesToFetch = {
-    println("No arguments supplied. Will look up how many pages to fetch")
     val result: Int = Await.result(client.url(baseUri).get().map {
       response =>
         (response.json \ "dokumentlista" \ "@sidor").as[String].toInt
@@ -66,11 +68,18 @@ object Riksdagen extends App {
   println(s"waiting for ${seq.size} request(s) to finish")
   seq.foreach(fut => Await.ready(fut, Duration("15 seconds")))
 
+
+  val result = Result(year.toString, vertices.toSet, edges.toMap)
+
+  fileWriterActor ! result
+
+/*
   println(s"VERTICES: ${vertices.size}")
   println(vertices)
 
   println(s"EDGES: ${edges.size}")
   edges.foreach(println(_))
+*/
 
   client.close()
 }

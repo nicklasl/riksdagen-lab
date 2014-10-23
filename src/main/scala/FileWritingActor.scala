@@ -24,7 +24,13 @@ class FileWritingActor extends Actor {
 
   }
 
-  def verticesOnOwnRow(set: Set[Intressent]): String = set.map(i => s"${i.intressent_id} '${i.namn}'").mkString("\n")
+  def partibeteckning(option: Option[String]): String = {
+    if(option.isDefined) s"(${option.get})"
+    else ""
+  }
+
+  def verticesOnOwnRow(set: Set[Intressent]): String = set.map(i => s"${i.intressent_id} '${i.namn} ${partibeteckning(i.partibet)}'").mkString("\n")
+
   def edgesOnOwnRow(map: Map[IntressentPair, Int]) = map.map(entry =>
     s"${entry._1.intressent1.intressent_id} ${entry._1.intressent2.intressent_id} ${entry._2}"
   ).mkString("\n")

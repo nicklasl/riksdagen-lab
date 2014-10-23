@@ -2,6 +2,7 @@ import akka.actor.Props
 import akka.pattern.ask
 import akka.util.Timeout
 import java.util.concurrent.TimeUnit
+import play.api.http.HeaderNames
 import play.api.libs.json.{JsArray, JsValue}
 import scala.collection.mutable
 import scala.concurrent.Await
@@ -36,13 +37,17 @@ object Riksdagen extends App {
   }
   val vertices = new mutable.HashSet[Intressent]
   val edges = new mutable.HashMap[IntressentPair, Int]
-
+  var totalBytesTransferred = 0
 
   def partioverskridandeSamarbete(intressent1: Intressent, intressent2: Intressent): Boolean = intressent1.partibet != intressent2.partibet
+
+  println(s"Starting fetching with uri=${uri(1)}")
 
   val seq = for (page <- Range(1, pagesToFetch + 1)) yield {
     client.url(uri(page)).get().map {
       response =>
+        val contentLength: Option[String] = response.header(HeaderNames.CONTENT_LENGTH)
+        totalBytesTransferred+=contentLength.map(i => i.toInt).getOrElse(0)
         val docs: Seq[JsValue] = ((response.json \ "dokumentlista") \ "dokument").as[JsArray].value
         docs.map {
           json =>
@@ -73,7 +78,7 @@ object Riksdagen extends App {
   }
   println(s"waiting for ${seq.size} request(s) to finish")
   seq.foreach(fut => Await.ready(fut, Duration("15 seconds")))
-
+  println(s"Finished all requests. Total transferred = ${totalBytesTransferred / 1000} KB, ${totalBytesTransferred / 1000000} MB")
 
   val result = Result(year.toString, vertices.toSet, edges.toMap)
   implicit val timeout = Timeout(5, TimeUnit.SECONDS)

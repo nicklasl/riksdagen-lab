@@ -72,7 +72,6 @@ object Riksdagen extends App {
 
               }
             }
-            s"klar med $page"
         }
     }
   }

@@ -5,6 +5,15 @@ import scala.annotation.tailrec
 
 class FileWritingActor extends Actor {
 
+  def receive: Actor.Receive = {
+    case result: Result => {
+      println(s"Writing file for year=${result.year}")
+      implicit val numberForIntressent: Map[String, Int] = createRunningNumbers(result.vertices)
+      Files.write(Paths.get(s"Network-${result.year}.net"), createString(result).getBytes(StandardCharsets.UTF_8))
+      sender() ! "done"
+    }
+    case _ => println("Got nothing!")
+  }
 
   def createRunningNumbers(set: Set[Intressent]): Map[String, Int] = {
 
@@ -17,18 +26,6 @@ class FileWritingActor extends Actor {
     }
     iter(set, 1, Map[String, Int]())
   }
-
-  def receive: Actor.Receive = {
-    case result: Result => {
-      println(s"Received and will write Result for year ${result.year}")
-      implicit val numberForIntressent: Map[String, Int] = createRunningNumbers(result.vertices)
-
-      Files.write(Paths.get(s"Network-${result.year}.net"), createString(result).getBytes(StandardCharsets.UTF_8))
-
-    }
-    case _ => println("Got nothing!")
-  }
-
 
   def createString(result: Result)(implicit numberForIntressent: Map[String, Int]): String = {
     s"""*Vertices ${result.vertices.size}

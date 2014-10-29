@@ -10,13 +10,22 @@ class FileWritingActor extends Actor {
       println(s"Writing file for year=${result.year}")
       implicit val numberForIntressent: Map[String, Int] = createRunningNumbers(result.vertices)
       Files.write(Paths.get(s"Network-${result.year}.net"), createString(result).getBytes(StandardCharsets.UTF_8))
-
       sender() ! "done"
-
     }
     case _ => println("Got nothing!")
   }
 
+  def createRunningNumbers(set: Set[Intressent]): Map[String, Int] = {
+
+    @tailrec
+    def iter(set: Set[Intressent], i: Int, accumulator: Map[String, Int]): Map[String, Int] = {
+      if (set.isEmpty) accumulator
+      else {
+        iter(set.tail, i + 1, accumulator.+((set.head.intressent_id, i)))
+      }
+    }
+    iter(set, 1, Map[String, Int]())
+  }
 
   def createString(result: Result)(implicit numberForIntressent: Map[String, Int]): String = {
     s"""*Vertices ${result.vertices.size}

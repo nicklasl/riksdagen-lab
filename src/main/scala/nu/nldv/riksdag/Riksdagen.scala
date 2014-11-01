@@ -1,3 +1,5 @@
+package nu.nldv.riksdag
+
 import akka.actor.Props
 import akka.pattern.ask
 import akka.util.Timeout
@@ -8,10 +10,11 @@ import scala.collection.mutable
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
+import nu.nldv.riksdag.model.{Result, IntressentPair, Intressent}
 
 object Riksdagen extends App {
   val actorSystem = akka.actor.ActorSystem("ActorSystem")
-  val fileWriterActor = actorSystem.actorOf(Props[FileWritingActor], name = "FileWritingActor")
+  val fileWriterActor = actorSystem.actorOf(Props[FileWritingActor], name = "nu.nldv.riksdag.FileWritingActor")
 
 
   def uri(page: Int) = s"$baseUri&p=$page"

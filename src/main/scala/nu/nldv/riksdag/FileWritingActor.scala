@@ -1,7 +1,10 @@
+package nu.nldv.riksdag
+
 import akka.actor.Actor
 import java.nio.file.{Paths, Files}
 import java.nio.charset.StandardCharsets
 import scala.annotation.tailrec
+import nu.nldv.riksdag.model.{IntressentPair, Intressent, Result}
 
 class FileWritingActor extends Actor {
 
